@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>环氧磨石颜色管理系统 - 静态预览</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+    <style>
+      .prototype-note {
+        margin: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #eef6f3;
+        color: #1f5d52;
+        font-weight: 750;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">CM</div>
+          <div>
+            <strong>颜色管理</strong>
+            <span>环氧磨石销售工作台</span>
+          </div>
+        </div>
+        <label class="search-box">
+          <span>搜索</span>
+          <input placeholder="项目 / 客户 / Item Code" />
+        </label>
+        <div class="filter-grid">
+          <label>
+            <span>年份</span>
+            <select><option>2026</option><option>2025</option></select>
+          </label>
+          <label>
+            <span>地区</span>
+            <select><option>全部</option><option>华南</option><option>华东</option></select>
+          </label>
+        </div>
+        <div class="project-list">
+          <button class="project-button active">
+            <span class="project-name">广州天河云境酒店大堂</span>
+            <span class="project-meta">云境酒店集团 · 2026 · 4 色</span>
+            <span class="risk-dot">需核对</span>
+          </button>
+          <button class="project-button">
+            <span class="project-name">上海洛河艺术中心</span>
+            <span class="project-meta">未填客户 · 2025 · 3 色</span>
+            <span class="risk-dot">需核对</span>
+          </button>
+          <button class="project-button">
+            <span class="project-name">厦门海屿商业裙楼</span>
+            <span class="project-meta">海屿置业 · 2026 · 2 色</span>
+            <span class="risk-dot">需核对</span>
+          </button>
+        </div>
+        <div class="sidebar-footer">
+          <span>✓</span>
+          <span>销售确认套装 Item 后再导出给 SAP 录单</span>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <p class="prototype-note">静态预览页：React 源码已在 src/ 中实现；当前页面用于无网络、未安装依赖时快速查看视觉和信息结构。</p>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Project color master data</p>
+            <h1>广州天河云境酒店大堂</h1>
+          </div>
+          <div class="role-switch">
+            <button class="selected">销售视图</button>
+            <button>配色视图</button>
+            <button>助理视图</button>
+          </div>
+        </header>
+
+        <section class="summary-strip">
+          <div class="info-item"><span>客户</span><strong>云境酒店集团</strong></div>
+          <div class="info-item"><span>地区</span><strong>华南</strong></div>
+          <div class="info-item"><span>销售负责人</span><strong>陈思远</strong></div>
+          <div class="info-item"><span>年份</span><strong>2026</strong></div>
+          <div class="info-item"><span>状态</span><strong>试运行</strong></div>
+          <div class="summary-note">首层大堂、接待区与电梯厅，客户偏好低对比灰白系。</div>
+        </section>
+
+        <section class="media-band">
+          <div class="section-title"><span>项目案例图片</span></div>
+          <div class="case-grid">
+            <div class="case-image" style="background: linear-gradient(135deg, #d9d6ce 0%, #f7f3ea 44%, #9da8a6 45%, #eff2ee 72%, #c9b9a5 100%)"><span>CASE 1</span></div>
+            <div class="case-image" style="background: radial-gradient(circle at 25% 30%, #f6f1e9 0 4%, transparent 5%), radial-gradient(circle at 70% 45%, #9ea8a2 0 5%, transparent 6%), linear-gradient(135deg, #d8d2c4, #f7f4ec)"><span>CASE 2</span></div>
+          </div>
+        </section>
+
+        <section class="table-panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-title"><span>项目颜色清单</span></div>
+              <p>销售下单使用套装 Item Code，A 组分 Item 仅用于工厂配色核对。</p>
+            </div>
+            <div class="actions">
+              <button class="secondary">新增颜色</button>
+              <button class="secondary">导出项目颜色表</button>
+              <button class="primary" id="openConfirm">生成确认单</button>
+            </div>
+          </div>
+
+          <div class="color-table">
+            <div class="table-row table-header">
+              <span>选择</span><span>色板</span><span>颜色</span><span>套装 Item / 套</span><span>A组分 Item</span><span>LAB</span><span>状态</span><span>风险</span><span>操作</span>
+            </div>
+            <div class="table-row checked">
+              <label class="check-cell"><input type="checkbox" checked /></label>
+              <span class="swatch" style="background: linear-gradient(135deg, #d8d8d2 0 35%, #f3f0e8 36% 52%, #9da19d 53% 58%, #ecebe3 59% 100%)"></span>
+              <div class="color-name"><strong>T-082 浅灰白</strong><span>浅灰底，细白色骨料，整体低对比，适合大堂大面积铺装。</span></div>
+              <div class="set-item"><strong>SET-EP-T082</strong><span>单位：套</span></div>
+              <code>A-EP-T082</code>
+              <span class="lab">L 72.4 / a -1.2 / b 4.8</span>
+              <span class="pill ok">可用</span>
+              <span class="risk-cell">⚠ 易混淆</span>
+              <div class="row-actions"><button>看</button><button>编</button></div>
+            </div>
+            <div class="table-row">
+              <label class="check-cell"><input type="checkbox" /></label>
+              <span class="swatch" style="background: linear-gradient(135deg, #ded8cb 0 38%, #f5eee2 39% 55%, #b7aa98 56% 61%, #eee7da 62% 100%)"></span>
+              <div class="color-name"><strong>T-083 米灰白</strong><span>米灰底，白色与浅米色骨料，视觉上与 T-082 接近。</span></div>
+              <div class="set-item"><strong>SET-EP-T083</strong><span>单位：套</span></div>
+              <code>A-EP-T083</code>
+              <span class="lab">L 73.1 / a 0.4 / b 7.2</span>
+              <span class="pill ok">可用</span>
+              <span class="risk-cell">⚠ 易混淆</span>
+              <div class="row-actions"><button>看</button><button>编</button></div>
+            </div>
+            <div class="table-row">
+              <label class="check-cell"><input type="checkbox" /></label>
+              <span class="swatch" style="background: linear-gradient(135deg, #aeb8ba 0 42%, #d8dddd 43% 55%, #748288 56% 62%, #cbd2d1 63% 100%)"></span>
+              <div class="color-name"><strong>T-097 雾蓝灰</strong><span>冷灰底，少量蓝灰骨料，公共走廊指定颜色。</span></div>
+              <div class="set-item"><strong>SET-EP-T097</strong><span>单位：套</span></div>
+              <code>A-EP-T097</code>
+              <span class="lab">L 64.8 / a -2.8 / b 1.1</span>
+              <span class="pill warn">待确认</span>
+              <span class="risk-cell blocked">⚠ 待确认</span>
+              <div class="row-actions"><button>看</button><button>编</button></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="history-panel">
+          <div class="section-title"><span>导出留痕</span></div>
+          <div class="history-list">
+            <div class="history-item"><strong>CF-20260521-001</strong><span>广州天河云境酒店大堂</span><span>3 个颜色</span><span>陈思远</span><span>2026-05-21 10:30</span></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div class="modal-backdrop" id="modal" style="display: none">
+      <section class="modal">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Order confirmation</p>
+            <h2>下单确认单</h2>
+          </div>
+          <button class="close-button" id="closeConfirm">×</button>
+        </div>
+        <div class="confirmation-summary">
+          <div class="info-item"><span>项目</span><strong>广州天河云境酒店大堂</strong></div>
+          <div class="info-item"><span>销售负责人</span><strong>陈思远</strong></div>
+          <div class="info-item"><span>确认颜色</span><strong>1 个</strong></div>
+          <div class="info-item"><span>下单单位</span><strong>套</strong></div>
+        </div>
+        <div class="notice warn">⚠ 本确认单包含易混淆颜色，请逐项核对色板、颜色描述和套装 Item Code。</div>
+        <div class="confirm-table">
+          <div class="confirm-row confirm-header"><span>色板</span><span>颜色</span><span>套装 Item</span><span>套数</span><span>A组分 Item</span><span>状态</span></div>
+          <div class="confirm-row">
+            <span class="mini-swatch" style="background: linear-gradient(135deg, #d8d8d2 0 35%, #f3f0e8 36% 52%, #9da19d 53% 58%, #ecebe3 59% 100%)"></span>
+            <div><strong>T-082 浅灰白</strong><small>易混淆：T-083 米灰白</small></div>
+            <code>SET-EP-T082</code>
+            <label class="quantity-input"><input type="number" value="12" /><span>套</span></label>
+            <code>A-EP-T082</code>
+            <span class="pill ok">可用</span>
+          </div>
+        </div>
+        <div class="final-check">SAP 下单字段以“套装 Item Code + 套数”为准，A 组分 Item 仅供工厂配色追溯。</div>
+        <div class="modal-actions">
+          <button class="secondary" id="closeConfirm2">返回修改</button>
+          <button class="primary" id="downloadCsv">确认无误，导出 Excel</button>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const modal = document.getElementById("modal");
+      document.getElementById("openConfirm").onclick = () => { modal.style.display = "grid"; };
+      document.getElementById("closeConfirm").onclick = () => { modal.style.display = "none"; };
+      document.getElementById("closeConfirm2").onclick = () => { modal.style.display = "none"; };
+      document.getElementById("downloadCsv").onclick = () => {
+        const csv = "确认单编号,项目名称,套装 Item Code,套数,单位,A组分 Item Code\\nCF-20260521-001,广州天河云境酒店大堂,SET-EP-T082,12,套,A-EP-T082";
+        const blob = new Blob(["\\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "CF-20260521-001-下单确认单.csv";
+        link.click();
+        URL.revokeObjectURL(url);
+      };
+    </script>
+  </body>
+</html>
