@@ -211,13 +211,19 @@ export function SetPasswordPage({ onUpdatePassword, onBack, isReset }) {
     }
 
     setLoading(true);
-    const { error: updateError } = await onUpdatePassword(password);
-    if (updateError) {
-      setError(getErrorMessage(updateError.message));
-    } else {
-      setSuccess(true);
+    try {
+      const { error: updateError } = await onUpdatePassword(password);
+      if (updateError) {
+        setError(getErrorMessage(updateError.message));
+      } else {
+        setSuccess(true);
+      }
+    } catch (err) {
+      console.error("handleSubmit exception:", err);
+      setError("密码设置失败，请重新点击邮件链接重试");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   if (success) {

@@ -113,10 +113,21 @@ export function AuthProvider({ children }) {
 
   // 设置新密码（重置密码或首次设置）
   const updatePassword = async (newPassword) => {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-    return { error };
+    try {
+      // 先确认当前有有效会话
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) {
+        return { error: { message: "会话已过期，请重新点击邮件中的重置链接" } };
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      return { error };
+    } catch (err) {
+      console.error("updatePassword exception:", err);
+      return { error: { message: err.message || "密码更新请求失败，请重试" } };
+    }
   };
 
   // 邀请用户（仅管理员）
