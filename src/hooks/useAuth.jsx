@@ -42,6 +42,18 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         setSession(newSession);
+
+        // 先处理事件类型（不要被 fetchProfile 的 await 阻塞）
+        if (event === "PASSWORD_RECOVERY") {
+          setPasswordRecovery(true);
+        }
+
+        if (event === "SIGNED_OUT") {
+          setProfile(null);
+          setPasswordRecovery(false);
+          return;
+        }
+
         if (newSession?.user) {
           const p = await fetchProfile(newSession.user.id);
           setProfile(p);
@@ -55,15 +67,6 @@ export function AuthProvider({ children }) {
           }
         } else {
           setProfile(null);
-        }
-
-        if (event === "PASSWORD_RECOVERY") {
-          setPasswordRecovery(true);
-        }
-
-        if (event === "SIGNED_OUT") {
-          setProfile(null);
-          setPasswordRecovery(false);
         }
       }
     );
@@ -101,6 +104,10 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin,
     });
+    if (!error) {
+      // 标记恢复意图，用于 PKCE 流程中识别 code 来源
+      sessionStorage.setItem("password_recovery_pending", "true");
+    }
     return { error };
   };
 

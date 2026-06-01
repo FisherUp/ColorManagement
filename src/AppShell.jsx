@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, Layers3 } from "lucide-react";
+import { Loader2, Layers3, Lock } from "lucide-react";
 import { useAuth } from "./hooks/useAuth.jsx";
 import { LoginPage, ForgotPasswordPage, SetPasswordPage } from "./pages/AuthPages.jsx";
 import App from "./App.jsx";
@@ -13,9 +13,12 @@ export default function AppShell() {
   const { session, profile, loading, signIn, signOut, resetPassword, updatePassword, passwordRecovery, clearPasswordRecovery } = useAuth();
   const [page, setPage] = useState("login"); // login | forgot | set-password | reset-password | app
   const [callbackHandled, setCallbackHandled] = useState(false);
+  const [callbackError, setCallbackError] = useState("");
 
   // 处理 Supabase 认证回调（PKCE code、token_hash、hash tokens）
   useEffect(() => {
+    let cancelled = false; // 防止 React Strict Mode 双重执行冲突
+
     async function handleCallback() {
       const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
@@ -25,31 +28,46 @@ export default function AppShell() {
 
       // 方式1：PKCE 流程 - URL 中有 code 参数
       if (code) {
+        // 清除 URL 参数（防止刷新重试）
+        window.history.replaceState(null, "", window.location.pathname);
+
         const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+
         if (error) {
           console.error("Code exchange failed:", error.message);
+          setCallbackError("链接验证失败：" + error.message);
+        } else {
+          // 检查是否为密码重置流程（通过 sessionStorage 标记）
+          const isRecovery = sessionStorage.getItem("password_recovery_pending");
+          if (isRecovery) {
+            sessionStorage.removeItem("password_recovery_pending");
+            setPage("reset-password");
+          }
+          // 同时 PASSWORD_RECOVERY 事件也会通过 useAuth 设置 passwordRecovery
         }
-        // 清除 URL 参数
-        window.history.replaceState(null, "", window.location.pathname);
         setCallbackHandled(true);
         return;
       }
 
       // 方式2：Token Hash 流程 - URL 中有 token_hash 参数
       if (tokenHash && type) {
+        window.history.replaceState(null, "", window.location.pathname);
+
         const { error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: type,
         });
+        if (cancelled) return;
+
         if (error) {
           console.error("OTP verification failed:", error.message);
+          setCallbackError("链接验证失败：" + error.message);
         } else if (type === "recovery") {
           setPage("reset-password");
         } else if (type === "invite" || type === "signup") {
           setPage("set-password");
         }
-        // 清除 URL 参数
-        window.history.replaceState(null, "", window.location.pathname);
         setCallbackHandled(true);
         return;
       }
@@ -68,9 +86,11 @@ export default function AppShell() {
         window.history.replaceState(null, "", window.location.pathname);
       }
 
-      setCallbackHandled(true);
+      if (!cancelled) setCallbackHandled(true);
     }
     handleCallback();
+
+    return () => { cancelled = true; };
   }, []);
 
   // 监听 PASSWORD_RECOVERY 事件（PKCE 流程中 code exchange 成功后触发）
@@ -106,6 +126,27 @@ export default function AppShell() {
     );
   }
 
+  // 回调验证失败
+  if (callbackError) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="brand-mark">
+              <Lock size={24} />
+            </div>
+            <h1>链接已失效</h1>
+            <p>{callbackError}</p>
+            <p style={{ marginTop: 8, fontSize: 13, color: '#6b7280' }}>请重新发送重置密码邮件，或联系管理员。</p>
+          </div>
+          <button className="auth-submit" onClick={() => { setCallbackError(""); setPage("login"); }}>
+            返回登录
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 忘记密码页面
   if (page === "forgot") {
     return (
@@ -130,7 +171,7 @@ export default function AppShell() {
     );
   }
 
-  // 重置密码页面
+  // 重置密码页面 - 有 session 时直接显示表单（不依赖 profile）
   if (page === "reset-password" && session) {
     return (
       <SetPasswordPage
@@ -145,18 +186,24 @@ export default function AppShell() {
     );
   }
 
-  // 重置密码页面但 session 尚未建立（等待中）
+  // 重置密码页面但 session 尚未建立 → 不应出现此状态，回到登录
   if (page === "reset-password" && !session) {
     return (
       <div className="auth-page">
         <div className="auth-card">
           <div className="auth-header">
             <div className="brand-mark">
-              <Loader2 size={24} className="spin" />
+              <Lock size={24} />
             </div>
-            <h1>验证中…</h1>
-            <p>正在验证重置密码链接，请稍候。</p>
+            <h1>链接已过期</h1>
+            <p>重置密码链接已失效，请重新申请。</p>
           </div>
+          <button className="auth-submit" onClick={() => setPage("forgot")}>
+            重新发送重置邮件
+          </button>
+          <button type="button" className="auth-link" onClick={() => setPage("login")}>
+            返回登录
+          </button>
         </div>
       </div>
     );
