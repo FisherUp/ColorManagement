@@ -2,6 +2,15 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
+const PROFILE_FETCH_TIMEOUT_MS = 10000;
+
+function withTimeout(promise, message, timeoutMs = PROFILE_FETCH_TIMEOUT_MS) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timer));
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -10,11 +19,14 @@ export function AuthProvider({ children }) {
 
   // 获取用户档案
   const fetchProfile = useCallback(async (userId) => {
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+    const { data, error } = await withTimeout(
+      supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("id", userId)
+        .single(),
+      "获取用户档案超时，请刷新后重试"
+    );
 
     if (error) {
       console.error("获取用户档案失败:", error);
@@ -28,19 +40,41 @@ export function AuthProvider({ children }) {
 
   // 监听认证状态变化
   useEffect(() => {
+    let active = true;
+
     // 获取当前 session
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      if (currentSession?.user) {
-        const p = await fetchProfile(currentSession.user.id);
-        setProfile(p);
+    async function initializeAuth() {
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        if (!active) return;
+
+        if (error) {
+          console.error("获取当前会话失败:", error);
+        }
+
+        setSession(currentSession);
+        if (currentSession?.user) {
+          const p = await fetchProfile(currentSession.user.id);
+          if (!active) return;
+          setProfile(p);
+        } else {
+          setProfile(null);
+        }
+      } catch (err) {
+        console.error("认证初始化失败:", err);
+        if (!active) return;
+        setSession(null);
+        setProfile(null);
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
-    });
+    }
+
+    initializeAuth();
 
     // 监听变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
         setSession(newSession);
 
         // 先处理事件类型（不要被 fetchProfile 的 await 阻塞）
@@ -55,8 +89,14 @@ export function AuthProvider({ children }) {
         }
 
         if (newSession?.user) {
-          const p = await fetchProfile(newSession.user.id);
-          setProfile(p);
+          fetchProfile(newSession.user.id)
+            .then((p) => {
+              if (active) setProfile(p);
+            })
+            .catch((err) => {
+              console.error("认证状态变化后获取用户档案失败:", err);
+              if (active) setProfile(null);
+            });
           // 更新最后登录时间
           if (event === "SIGNED_IN") {
             supabase
@@ -71,7 +111,10 @@ export function AuthProvider({ children }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, [fetchProfile]);
 
   // 登录

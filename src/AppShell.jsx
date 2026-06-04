@@ -9,6 +9,16 @@ import { supabase } from "./lib/supabase";
  * 应用外壳 - 处理认证路由
  * 根据 URL hash 和认证状态决定显示哪个页面
  */
+const CALLBACK_TIMEOUT_MS = 10000;
+
+function withCallbackTimeout(promise, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = window.setTimeout(() => reject(new Error(message)), CALLBACK_TIMEOUT_MS);
+  });
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timer));
+}
+
 export default function AppShell() {
   const { session, profile, loading, signIn, signOut, resetPassword, updatePassword, passwordRecovery, clearPasswordRecovery } = useAuth();
   const [page, setPage] = useState("login"); // login | forgot | set-password | reset-password | app
@@ -31,7 +41,15 @@ export default function AppShell() {
         // 清除 URL 参数（防止刷新重试）
         window.history.replaceState(null, "", window.location.pathname);
 
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        let error = null;
+        try {
+          ({ error } = await withCallbackTimeout(
+            supabase.auth.exchangeCodeForSession(code),
+            "链接验证超时，请重新发送重置密码邮件"
+          ));
+        } catch (err) {
+          error = err;
+        }
         if (cancelled) return;
 
         if (error) {
@@ -54,10 +72,18 @@ export default function AppShell() {
       if (tokenHash && type) {
         window.history.replaceState(null, "", window.location.pathname);
 
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: type,
-        });
+        let error = null;
+        try {
+          ({ error } = await withCallbackTimeout(
+            supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: type,
+            }),
+            "链接验证超时，请重新发送重置密码邮件"
+          ));
+        } catch (err) {
+          error = err;
+        }
         if (cancelled) return;
 
         if (error) {
